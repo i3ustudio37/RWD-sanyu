@@ -97,23 +97,23 @@ const ParticleBackground: React.FC = () => {
     const initParticles = () => {
       particles = [];
       const area = width * height;
-      // PERFORMANCE: significantly reduce density (divide by 20000 instead of 15000)
-      const count = Math.floor(area / 20000); 
+      // High Density
+      const count = Math.floor(area / 12000); 
       for (let i = 0; i < count; i++) {
         particles.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          vx: (Math.random() - 0.5) * 0.5, 
-          vy: (Math.random() - 0.5) * 0.5,
-          size: Math.random() * 4 + 2, 
-          opacity: Math.random() * 0.5 + 0.1,
-          pulseSpeed: (Math.random() - 0.5) * 0.01 
+          vx: (Math.random() - 0.5) * 0.3, 
+          vy: (Math.random() - 0.5) * 0.3,
+          size: Math.random() * 1.5 + 0.5, // Tiny particles: 0.5 to 2.0 px
+          opacity: Math.random() * 0.2 + 0.05, // Low opacity: 0.05 to 0.25
+          pulseSpeed: (Math.random() - 0.5) * 0.005 
         });
       }
     };
 
     const animate = () => {
-      if (!isVisible) return; // PERFORMANCE: Stop rendering if not visible
+      if (!isVisible) return; 
 
       ctx.clearRect(0, 0, width, height);
       
@@ -127,28 +127,27 @@ const ParticleBackground: React.FC = () => {
 
         // Pulse opacity
         p.opacity += p.pulseSpeed;
-        if (p.opacity > 0.6 || p.opacity < 0.1) p.pulseSpeed *= -1;
+        if (p.opacity > 0.3 || p.opacity < 0.05) p.pulseSpeed *= -1;
 
         // Bounce off edges
         if (p.x < 0 || p.x > width) p.vx *= -1;
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
-        // Mouse Repulsion - Optimized
-        // Only calculate interaction if mouse is somewhat inside the canvas
+        // Mouse Repulsion
         if (mouse.x > -100 && mouse.x < width + 100) {
             const dx = mouse.x - p.x;
             const dy = mouse.y - p.y;
-            // Quick bounding box check before sqrt
+            // Quick bounding box check
             if (dx < 150 && dx > -150 && dy < 150 && dy > -150) {
                 const distSq = dx * dx + dy * dy;
-                const maxDistSq = 22500; // 150^2
+                const maxDistSq = 22500; 
                 
                 if (distSq < maxDistSq) {
                   const distance = Math.sqrt(distSq);
                   const force = (150 - distance) / 150;
                   const angle = Math.atan2(dy, dx);
-                  const pushX = Math.cos(angle) * force * 2.0;
-                  const pushY = Math.sin(angle) * force * 2.0;
+                  const pushX = Math.cos(angle) * force * 1.5;
+                  const pushY = Math.sin(angle) * force * 1.5;
                   
                   p.x -= pushX;
                   p.y -= pushY;
@@ -158,7 +157,6 @@ const ParticleBackground: React.FC = () => {
 
         // Draw Circle
         ctx.beginPath();
-        // Optimization: floor values for rendering can sometimes be faster, but modern browsers handle subpixels well.
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
         ctx.fill();
@@ -167,7 +165,6 @@ const ParticleBackground: React.FC = () => {
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    // Use Intersection Observer to pause animation when off-screen
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         isVisible = entry.isIntersecting;
@@ -238,7 +235,7 @@ const SanyuLogo = ({
           <style>{`
             @keyframes float {
               0%, 100% { transform: translateY(0); }
-              50% { transform: translateY(-10px); }
+              50% { transform: translateY(-5px); } /* Reduced movement */
             }
             @keyframes blink-glow {
               0%, 100% { opacity: 1; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8)); }
@@ -487,7 +484,7 @@ const App: React.FC = () => {
           
           {/* Left Column: Visuals (Replaced Images with Logo) */}
           <div className="order-1 md:order-1 relative w-full h-full flex items-center justify-center md:justify-start pointer-events-none md:pointer-events-auto">
-             <div className="relative w-full max-w-lg aspect-square flex items-center justify-center p-8">
+             <div className="relative w-full max-w-3xl aspect-square flex items-center justify-center p-8">
                   <SanyuLogo 
                     animate 
                     className="w-full h-full drop-shadow-neon" 

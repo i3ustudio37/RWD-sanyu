@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { YearRecord, Achievement, CompetitionCategory } from '../types';
 import * as storage from '../services/storage';
@@ -331,7 +332,8 @@ const HistorySection: React.FC<HistorySectionProps> = ({ isAdmin }) => {
                 <svg 
                   viewBox={`0 0 ${chartWidth} ${height}`} 
                   className="w-full h-full overflow-visible"
-                  preserveAspectRatio="none"
+                  // Removed preserveAspectRatio="none" to prevent deformation.
+                  // The viewBox logic above handles the width dynamically.
                 >
                   <defs>
                     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">

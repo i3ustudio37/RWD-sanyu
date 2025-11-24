@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, isToday, startOfWeek, endOfWeek, addWeeks, addDays } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, Trash2, Maximize2, Minimize2, MapPin, Trophy, Dumbbell, Flag } from 'lucide-react';
@@ -102,8 +103,8 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ isAdmin }) => {
         </div>
 
         <div className="grid md:grid-cols-12 gap-8">
-          {/* Calendar Grid */}
-          <div className="md:col-span-7 lg:col-span-8 bg-sanyu-dark-90 p-4 md:p-6 rounded-2xl border border-gray-800 shadow-xl backdrop-blur-sm flex flex-col">
+          {/* Calendar Grid - INCREASED SIZE (col-span-8/9) */}
+          <div className="md:col-span-8 lg:col-span-9 bg-sanyu-dark-90 p-4 md:p-6 rounded-2xl border border-gray-800 shadow-xl backdrop-blur-sm flex flex-col">
             
             {/* Calendar Header */}
             <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
@@ -227,8 +228,8 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ isAdmin }) => {
             )}
           </div>
 
-          {/* Details Panel */}
-          <div className="md:col-span-5 lg:col-span-4 flex flex-col h-full mt-8 md:mt-0">
+          {/* Details Panel - REDUCED SIZE (col-span-4/3) */}
+          <div className="md:col-span-4 lg:col-span-3 flex flex-col h-full mt-8 md:mt-0">
             <div className="bg-sanyu-dark-90 backdrop-blur-sm text-gray-200 p-6 rounded-2xl shadow-xl h-full border border-gray-700 flex flex-col">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-gray-700 pb-4 text-white">
                 <Clock className="text-sanyu-red" size={20} />

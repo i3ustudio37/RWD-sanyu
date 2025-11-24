@@ -17,9 +17,9 @@ const TechBackground: React.FC = () => {
     let height = 0;
     
     // Performance Config
-    const CONNECTION_DIST = 120;
+    const CONNECTION_DIST = 100; // Slightly reduced connection distance to keep it clean with high density
     const CONNECTION_DIST_SQ = CONNECTION_DIST * CONNECTION_DIST;
-    const SIGNAL_SPEED_BASE = 1.5;
+    const SIGNAL_SPEED_BASE = 1.0;
 
     const resize = () => {
       width = window.innerWidth;
@@ -34,16 +34,16 @@ const TechBackground: React.FC = () => {
       signals = [];
       const area = width * height;
       
-      // Reduce density: Divide by a larger number (e.g., 25000 instead of 18000)
-      // This significantly reduces the O(N^2) complexity of line checks
-      const nodeCount = Math.floor(area / 25000); 
+      // High Density (User request: do not reduce density)
+      // Using a smaller divisor increases count.
+      const nodeCount = Math.floor(area / 10000); 
       
       for (let i = 0; i < nodeCount; i++) {
         nodes.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          vx: (Math.random() - 0.5) * 0.3, // Slow movement is smoother
-          vy: (Math.random() - 0.5) * 0.3,
+          vx: (Math.random() - 0.5) * 0.2, // Very slow movement
+          vy: (Math.random() - 0.5) * 0.2,
         });
       }
     };
@@ -53,7 +53,8 @@ const TechBackground: React.FC = () => {
       ctx.clearRect(0, 0, width, height);
       
       // Update Nodes
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      // Very subtle nodes
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)'; 
       const len = nodes.length;
 
       for (let i = 0; i < len; i++) {
@@ -67,20 +68,17 @@ const TechBackground: React.FC = () => {
         if (node.x < 0 || node.x > width) node.vx *= -1;
         if (node.y < 0 || node.y > height) node.vy *= -1;
 
-        // Draw Node
+        // Draw Node (Tiny size)
         ctx.beginPath();
-        ctx.arc(node.x, node.y, 1.5, 0, Math.PI * 2);
+        ctx.arc(node.x, node.y, 0.8, 0, Math.PI * 2);
         ctx.fill();
       }
 
       // Draw Connections & Logic
-      // Optimization: Separate loop for drawing to minimize state changes, 
-      // but here we combine for single pass over N^2 pairs if N is small.
-      
-      ctx.lineWidth = 0.5;
+      ctx.lineWidth = 0.3; // Very thin lines
 
       // Spawn signals rarely
-      if (Math.random() < 0.02 && signals.length < 5) {
+      if (Math.random() < 0.01 && signals.length < 5) {
         const fromIdx = Math.floor(Math.random() * len);
         // Find a neighbor
         for (let j = 0; j < len; j++) {
@@ -116,9 +114,10 @@ const TechBackground: React.FC = () => {
           if (distSq < CONNECTION_DIST_SQ) {
             // Only calculate actual distance if within range (for opacity)
             const dist = Math.sqrt(distSq);
-            const opacity = 1 - (dist / CONNECTION_DIST);
+            // Very subtle opacity
+            const opacity = (1 - (dist / CONNECTION_DIST)) * 0.05; 
             
-            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.15})`;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
             ctx.beginPath();
             ctx.moveTo(nodes[i].x, nodes[i].y);
             ctx.lineTo(nodes[j].x, nodes[j].y);
@@ -128,7 +127,7 @@ const TechBackground: React.FC = () => {
       }
 
       // Draw Signals (Dots on lines)
-      ctx.fillStyle = '#e6004c';
+      ctx.fillStyle = 'rgba(230, 0, 76, 0.4)'; // More transparent red
       for (let i = signals.length - 1; i >= 0; i--) {
           const sig = signals[i];
           const p1 = nodes[sig.from];
@@ -156,7 +155,7 @@ const TechBackground: React.FC = () => {
           const currY = p1.y + dy * sig.progress;
 
           ctx.beginPath();
-          ctx.arc(currX, currY, 2, 0, Math.PI * 2);
+          ctx.arc(currX, currY, 1.2, 0, Math.PI * 2);
           ctx.fill();
       }
 
@@ -177,7 +176,7 @@ const TechBackground: React.FC = () => {
     <canvas 
       ref={canvasRef} 
       className="fixed inset-0 z-0 pointer-events-none" 
-      style={{ opacity: 0.6 }} 
+      style={{ opacity: 1 }} // Controlled by internal fillStyle/strokeStyle
     />
   );
 };
