@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { differenceInDays, parseISO } from 'date-fns';
 import CalendarSection from './components/CalendarSection';
@@ -65,34 +66,43 @@ const NavLink: React.FC<NavLinkProps> = ({ href, children, mobile = false, onCli
   );
 };
 
-// Particle Background Component
+// Optimized Particle Background Component
 const ParticleBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
     let particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number; pulseSpeed: number }[] = [];
     let animationFrameId: number;
-    let mouse = { x: -1000, y: -1000 };
+    let width = 0;
+    let height = 0;
+    let isVisible = true;
+    
+    // Mouse interaction state
+    const mouse = { x: -1000, y: -1000 };
 
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
       initParticles();
     };
 
     const initParticles = () => {
       particles = [];
-      // Reduced density significantly
-      const count = Math.floor((canvas.width * canvas.height) / 15000); 
+      const area = width * height;
+      // PERFORMANCE: significantly reduce density (divide by 20000 instead of 15000)
+      const count = Math.floor(area / 20000); 
       for (let i = 0; i < count; i++) {
         particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
+          x: Math.random() * width,
+          y: Math.random() * height,
           vx: (Math.random() - 0.5) * 0.5, 
           vy: (Math.random() - 0.5) * 0.5,
           size: Math.random() * 4 + 2, 
@@ -103,9 +113,14 @@ const ParticleBackground: React.FC = () => {
     };
 
     const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!isVisible) return; // PERFORMANCE: Stop rendering if not visible
+
+      ctx.clearRect(0, 0, width, height);
       
-      particles.forEach(p => {
+      const len = particles.length;
+      for (let i = 0; i < len; i++) {
+        const p = particles[i];
+        
         // Update position
         p.x += p.vx;
         p.y += p.vy;
@@ -115,52 +130,84 @@ const ParticleBackground: React.FC = () => {
         if (p.opacity > 0.6 || p.opacity < 0.1) p.pulseSpeed *= -1;
 
         // Bounce off edges
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
 
-        // Mouse Repulsion
-        const dx = mouse.x - p.x;
-        const dy = mouse.y - p.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const maxDistance = 150;
-
-        if (distance < maxDistance) {
-          const force = (maxDistance - distance) / maxDistance;
-          const angle = Math.atan2(dy, dx);
-          const pushX = Math.cos(angle) * force * 2.0;
-          const pushY = Math.sin(angle) * force * 2.0;
-          
-          p.x -= pushX;
-          p.y -= pushY;
+        // Mouse Repulsion - Optimized
+        // Only calculate interaction if mouse is somewhat inside the canvas
+        if (mouse.x > -100 && mouse.x < width + 100) {
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            // Quick bounding box check before sqrt
+            if (dx < 150 && dx > -150 && dy < 150 && dy > -150) {
+                const distSq = dx * dx + dy * dy;
+                const maxDistSq = 22500; // 150^2
+                
+                if (distSq < maxDistSq) {
+                  const distance = Math.sqrt(distSq);
+                  const force = (150 - distance) / 150;
+                  const angle = Math.atan2(dy, dx);
+                  const pushX = Math.cos(angle) * force * 2.0;
+                  const pushY = Math.sin(angle) * force * 2.0;
+                  
+                  p.x -= pushX;
+                  p.y -= pushY;
+                }
+            }
         }
 
         // Draw Circle
         ctx.beginPath();
+        // Optimization: floor values for rendering can sometimes be faster, but modern browsers handle subpixels well.
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
         ctx.fill();
-      });
+      }
 
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    window.addEventListener('resize', resize);
-    window.addEventListener('mousemove', (e) => {
+    // Use Intersection Observer to pause animation when off-screen
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        isVisible = entry.isIntersecting;
+        if (isVisible) {
+          animate(); // Resume
+        } else {
+          cancelAnimationFrame(animationFrameId); // Pause
+        }
+      });
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
         mouse.x = e.clientX - rect.left;
         mouse.y = e.clientY - rect.top;
-    });
+    };
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('mousemove', handleMouseMove);
 
     resize();
     animate();
 
     return () => {
       window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />;
+  return (
+    <div ref={containerRef} className="absolute inset-0 z-0 pointer-events-none">
+        <canvas ref={canvasRef} />
+    </div>
+  );
 };
 
 

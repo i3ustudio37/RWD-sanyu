@@ -60,7 +60,7 @@ const HistorySection: React.FC<HistorySectionProps> = ({ isAdmin }) => {
   // Extract unique years for the filter dropdown (Descending for UI)
   const availableYears = useMemo(() => {
     const years = records.map(r => r.academicYear);
-    return Array.from(new Set(years)).sort((a, b) => parseInt(b) - parseInt(a));
+    return Array.from(new Set(years)).sort((a, b) => parseInt(String(b)) - parseInt(String(a)));
   }, [records]);
 
   // Available years sorted Ascending for Range Logic
