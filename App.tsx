@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 import CalendarSection from './components/CalendarSection';
 import HistorySection from './components/HistorySection';
 import AdminLoginModal from './components/AdminLoginModal';
@@ -358,8 +358,8 @@ const App: React.FC = () => {
     daysLeft: number;
   } | null>(null);
 
-  // Hero section reference for mouse tracking
-  const heroRef = useRef<HTMLElement>(null);
+  // Global App Reference for Mouse Tracking
+  const appRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -375,10 +375,13 @@ const App: React.FC = () => {
 
     const upcomingCompetitions = events
       .filter(e => e.type === 'competition')
-      .map(e => ({
-        ...e,
-        parsedDate: parseISO(e.date)
-      }))
+      .map(e => {
+        const [y, m, d] = e.date.split('-').map(Number);
+        return {
+          ...e,
+          parsedDate: new Date(y, m - 1, d)
+        };
+      })
       .filter(e => e.parsedDate >= today)
       .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime());
 
@@ -391,27 +394,19 @@ const App: React.FC = () => {
       });
     }
     
-    // Add mouse move listener to hero section using ref to avoid re-renders
-    const handleHeroMouseMove = (e: MouseEvent) => {
-      if (heroRef.current) {
-        const rect = heroRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        heroRef.current.style.setProperty('--mouse-x', `${x}px`);
-        heroRef.current.style.setProperty('--mouse-y', `${y}px`);
+    // Global Mouse Tracker for Glow Effect
+    const handleMouseMove = (e: MouseEvent) => {
+      if (appRef.current) {
+        // Use clientX/Y for fixed position overlay
+        appRef.current.style.setProperty('--mouse-x', `${e.clientX}px`);
+        appRef.current.style.setProperty('--mouse-y', `${e.clientY}px`);
       }
     };
-
-    const heroEl = heroRef.current;
-    if (heroEl) {
-      heroEl.addEventListener('mousemove', handleHeroMouseMove);
-    }
+    window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      if (heroEl) {
-        heroEl.removeEventListener('mousemove', handleHeroMouseMove);
-      }
+      window.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
@@ -420,9 +415,19 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-sanyu-black text-white font-sans relative">
-      {/* Global Tech Background for non-hero sections */}
+    <div ref={appRef} className="min-h-screen bg-sanyu-black text-white font-sans relative">
+      {/* Global Tech Background */}
       <TechBackground />
+
+      {/* GLOBAL GLOW EFFECT */}
+      {/* Fixed position overlay that sits above most content but below modals/nav (z-30) */}
+      {/* Added mix-blend-screen to prevent washing out text */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-30 transition-opacity duration-300 mix-blend-screen"
+        style={{
+          background: 'radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(230, 0, 76, 0.15), transparent 40%)'
+        }}
+      />
 
       {/* Navigation */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b ${scrolled ? 'bg-sanyu-black-95 backdrop-blur-sm border-gray-800 py-2' : 'bg-transparent border-transparent py-6'}`}>
@@ -469,51 +474,105 @@ const App: React.FC = () => {
       {/* Hero Section */}
       <section 
         id="hero" 
-        ref={heroRef}
-        className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-sanyu-black z-10"
+        className="relative min-h-screen flex flex-col justify-center pt-24 pb-12 overflow-hidden bg-sanyu-black z-10"
       >
         {/* Interactive Particle Background */}
         <ParticleBackground />
         
-        {/* Mouse Follower Glow Layer */}
-        <div 
-           className="absolute inset-0 pointer-events-none"
-           style={{
-             background: 'radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(230, 0, 76, 0.15), transparent 40%)'
-           }}
-        />
-
         {/* Abstract Background Shapes */}
         <div 
           className="absolute -bottom-32 -right-32 w-96 h-96 bg-sanyu-red rounded-full opacity-10 animate-pulse pointer-events-none blur-128"
         ></div>
 
-        <div className="container mx-auto px-4 relative z-10 grid md:grid-cols-2 gap-8 items-center h-full" style={{ minHeight: 'calc(100vh - 80px)' }}>
+        <div className="container mx-auto px-4 relative z-10 flex flex-col items-center">
           
-          {/* Left Column: Visuals (Replaced Images with Logo) */}
-          <div className="order-1 md:order-1 relative w-full h-full flex items-center justify-center md:justify-start pointer-events-none md:pointer-events-auto">
-             <div className="relative w-full max-w-3xl aspect-square flex items-center justify-center p-8">
-                  <SanyuLogo 
-                    animate 
-                    className="w-full h-full drop-shadow-neon" 
-                  />
+          {/* Top Section: Logo and Text (2 Columns on MD+) */}
+          {/* Layout: Mobile (1 col), Tablet (2 cols split top/bottom cards), Desktop (2 cols side-by-side) */}
+          <div className="grid md:grid-cols-2 gap-8 items-center w-full mb-12 lg:mb-0">
+             
+             {/* Left Column: Logo */}
+             <div className="relative w-full flex items-center justify-center md:justify-start pointer-events-none md:pointer-events-auto">
+                 <div className="relative w-full max-w-lg aspect-square flex items-center justify-center p-8">
+                      <SanyuLogo 
+                        animate 
+                        className="w-full h-full drop-shadow-neon" 
+                      />
+                 </div>
+             </div>
+
+             {/* Right Column: Text Content + (Desktop only) Info Cards */}
+             <div className="select-none flex flex-col items-center text-center md:items-start md:text-left relative z-30">
+                <div className="inline-block bg-sanyu-red-10 border border-sanyu-red-50 text-sanyu-red text-sm md:text-xl font-bold px-4 py-1.5 md:px-6 md:py-2 rounded-full mb-6 md:mb-8 tracking-widest uppercase shadow-neon-soft hover:scale-105 transition-transform duration-300">
+                  熱烈招生中
+                </div>
+                
+                <SpotlightTitle />
+
+                <div className="text-gray-400 text-lg mb-8 max-w-md leading-relaxed space-y-2 font-medium mx-auto md:mx-0">
+                  <p className="block text-xl text-white">歡迎加入三玉國小滾球隊</p>
+                  <p className="block text-gray-400">我們培養冠軍，磨練心性，追求卓越！</p>
+                </div>
+
+                {/* --- DESKTOP VIEW ONLY (>= 1024px) --- */}
+                {/* Info Cards embedded in the right column */}
+                <div className="hidden lg:flex flex-col items-start gap-8 mt-4 w-full">
+                   <div className="flex flex-row gap-4 w-full">
+                      {/* Practice Time Block */}
+                      <div className="bg-sanyu-dark-50 border-l-4 border-sanyu-red p-6 rounded-r-lg backdrop-blur-sm shadow-lg hover:bg-sanyu-dark-70 transition-colors flex flex-col items-start flex-1 min-w-[220px]">
+                        <h3 className="text-white font-bold uppercase tracking-wider mb-2 text-sm flex items-center gap-2">
+                          <span className="w-2 h-2 bg-sanyu-red rounded-full animate-pulse"></span>
+                          練習時間
+                        </h3>
+                        <p className="text-2xl font-black text-white">週一 • 週二 • 週四</p>
+                        <p className="text-sanyu-red font-bold text-lg glow-text">16:00 ~ 17:30</p>
+                        <p className="text-gray-500 text-sm mt-2">@ 三玉國小滾球場</p>
+                      </div>
+
+                      {/* Next Match Block */}
+                      {nextMatch && (
+                        <div className="bg-sanyu-dark-50 border-l-4 border-yellow-500 p-6 rounded-r-lg backdrop-blur-sm shadow-lg hover:bg-sanyu-dark-70 transition-colors flex flex-col items-start flex-1 min-w-[220px]">
+                          <h3 className="text-white font-bold uppercase tracking-wider mb-2 text-sm flex items-center gap-2">
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                            下一場比賽
+                          </h3>
+                          <div className="flex items-baseline gap-2 mb-1">
+                             <span className="text-xs text-gray-400">倒數</span>
+                             <span className="text-5xl font-black text-white tracking-tighter leading-none">{nextMatch.daysLeft}</span>
+                             <span className="text-xs text-gray-400">天</span>
+                          </div>
+                          <p className="text-sanyu-red font-bold text-xl leading-tight mb-2">{nextMatch.event.title}</p>
+                          <div className="flex flex-col gap-1 text-gray-400 text-sm">
+                            <div className="flex items-center gap-1">
+                               <Calendar size={12} />
+                               <span>{nextMatch.event.date}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                               <MapPin size={12} />
+                               <span>{nextMatch.event.location || '請見詳細資訊'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                   </div>
+
+                   {/* CTA Button */}
+                   <NavLink href="#calendar">
+                      <span 
+                        className="inline-flex items-center gap-2 bg-white text-black hover:bg-sanyu-red hover:text-white hover:shadow-neon-glow font-bold py-4 px-8 rounded-full transition-all transform hover:scale-105 shadow-neon-glow cursor-pointer"
+                      >
+                         查看行事曆
+                      </span>
+                   </NavLink>
+                </div>
              </div>
           </div>
-
-          {/* Right Column: Text Content */}
-          <div className="order-2 md:order-2 select-none flex flex-col items-center text-center md:items-start md:text-left md:pl-10 relative z-30">
-            <div className="inline-block bg-sanyu-red-10 border border-sanyu-red-50 text-sanyu-red text-sm md:text-xl font-bold px-4 py-1.5 md:px-6 md:py-2 rounded-full mb-6 md:mb-8 tracking-widest uppercase shadow-neon-soft hover:scale-105 transition-transform duration-300">
-              熱烈招生中
-            </div>
             
-            <SpotlightTitle />
-
-            <div className="text-gray-400 text-lg mb-8 max-w-md leading-relaxed space-y-2 font-medium mx-auto md:mx-0">
-              <p className="block text-xl text-white">歡迎加入三玉國小滾球隊</p>
-              <p className="block text-gray-400">我們培養冠軍，磨練心性，追求卓越！</p>
-            </div>
+          {/* --- TABLET/MOBILE VIEW ONLY (< 1024px) --- */}
+          {/* Info Cards Full Width at Bottom */}
+          <div className="w-full flex flex-col items-center lg:hidden">
             
-            <div className="flex flex-col md:flex-row gap-6 w-full mb-8 text-left">
+            {/* Info Cards Container */}
+            <div className="flex flex-col md:flex-row gap-6 w-full max-w-5xl mb-12 justify-center">
               {/* Practice Time Block */}
               <div className="bg-sanyu-dark-50 border-l-4 border-sanyu-red p-6 rounded-r-lg backdrop-blur-sm shadow-lg hover:bg-sanyu-dark-70 transition-colors flex flex-col items-start flex-1 min-w-[220px]">
                 <h3 className="text-white font-bold uppercase tracking-wider mb-2 text-sm flex items-center gap-2">
@@ -552,6 +611,7 @@ const App: React.FC = () => {
               )}
             </div>
 
+            {/* CTA Button */}
             <NavLink href="#calendar">
                <span 
                  className="inline-flex items-center gap-2 bg-white text-black hover:bg-sanyu-red hover:text-white hover:shadow-neon-glow font-bold py-4 px-8 rounded-full transition-all transform hover:scale-105 shadow-neon-glow cursor-pointer"
