@@ -268,7 +268,7 @@ const SanyuLogo = ({
           className={animate && !monochrome ? "blink-bg" : ""}
         />
         
-        {/* Gray Path 1 (S Part - Outer Curve) (st0) - STATIC */}
+        {/* Gray Path 1 (S Part) (st0) - STATIC */}
         <path 
           d="M124.38,70.05c0,.56-.01,1.11-.04,1.67-.12,2.82-.57,5.55-1.3,8.17-.19.69-.4,1.36-.63,2.03-.78,2.28-1.78,4.47-2.98,6.52-.32.56-.66,1.11-1.02,1.65-1.24,1.89-2.65,3.67-4.21,5.3-.43.45-.88.9-1.33,1.33-3.4,3.21-7.41,5.77-11.83,7.5-2.13.83-4.36,1.47-6.67,1.89-1.35.25-2.73.42-4.12.52-.84.06-1.69.09-2.54.09s-1.7-.03-2.54-.09c-1.11-.08-2.21-.2-3.29-.37-.63-.1-1.25-.22-1.86-.35l4.36-4.36c1.1.12,2.21.17,3.33.17,4.76,0,9.28-1.05,13.33-2.94,3.06-1.42,5.86-3.32,8.3-5.6.46-.43.9-.87,1.34-1.32,1.56-1.64,2.94-3.44,4.12-5.39.34-.56.66-1.12.96-1.7,1.13-2.15,2.02-4.45,2.64-6.86.18-.72.34-1.45.48-2.19.24-1.31.39-2.64.46-4,.03-.55.04-1.11.04-1.67,0-1.13-.06-2.24-.17-3.33l4.36-4.36c.07.34.14.69.2,1.03.4,2.16.61,4.39.61,6.67Z"
           style={{ fill: colorGray }}
@@ -305,33 +305,41 @@ const SpotlightTitle = () => {
     });
   };
 
+  // Reusable text content structure for alignment consistency
+  const content = (
+    <div className="flex flex-row md:flex-col gap-4 md:gap-0 justify-center md:justify-start items-center md:items-start">
+      <span>精準</span>
+      <span>策略</span>
+      <span>勝利</span>
+    </div>
+  );
+
   return (
     <div 
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="relative mb-8 select-none text-left w-full"
+      className="relative mb-8 select-none w-full text-center md:text-left"
       style={{
         '--x': `${position.x}px`,
         '--y': `${position.y}px`,
       } as React.CSSProperties}
     >
       {/* Base Text (Darker/Dimmed) - Updated color to #c2144e as requested */}
-      <h1 className="text-5xl md:text-7xl font-black italic uppercase leading-relaxed py-4 pr-4" style={{ color: '#c2144e' }}>
-        精準<br />策略<br />勝利
-      </h1>
+      <div className="text-4xl md:text-7xl font-black italic uppercase leading-relaxed py-4 pr-0 md:pr-4" style={{ color: '#c2144e' }}>
+        {content}
+      </div>
       
       {/* Spotlight Reveal Layer - absolute inset-0 to match perfectly */}
-      <h1 
-        className="text-5xl md:text-7xl font-black italic uppercase leading-relaxed absolute inset-0 text-transparent bg-clip-text pointer-events-none py-4 pr-4"
+      <div 
+        className="text-4xl md:text-7xl font-black italic uppercase leading-relaxed absolute inset-0 text-transparent bg-clip-text pointer-events-none py-4 pr-0 md:pr-4"
         style={{
           // Updated to 500px radius and new stops as requested
           backgroundImage: 'radial-gradient(circle 500px at var(--x) var(--y), #ffffff 0%, #e6004c 20%, transparent 100%)',
           WebkitBackgroundClip: 'text',
-          textAlign: 'left'
         }}
       >
-        精準<br />策略<br />勝利
-      </h1>
+        {content}
+      </div>
     </div>
   );
 }
@@ -493,19 +501,19 @@ const App: React.FC = () => {
           </div>
 
           {/* Right Column: Text Content */}
-          <div className="order-2 md:order-2 select-none flex flex-col items-start text-left md:pl-10 relative z-30">
-            <div className="inline-block bg-sanyu-red-10 border border-sanyu-red-50 text-sanyu-red text-xl font-bold px-6 py-2 rounded-full mb-8 tracking-widest uppercase shadow-neon-soft hover:scale-105 transition-transform duration-300">
+          <div className="order-2 md:order-2 select-none flex flex-col items-center text-center md:items-start md:text-left md:pl-10 relative z-30">
+            <div className="inline-block bg-sanyu-red-10 border border-sanyu-red-50 text-sanyu-red text-sm md:text-xl font-bold px-4 py-1.5 md:px-6 md:py-2 rounded-full mb-6 md:mb-8 tracking-widest uppercase shadow-neon-soft hover:scale-105 transition-transform duration-300">
               熱烈招生中
             </div>
             
             <SpotlightTitle />
 
-            <div className="text-gray-400 text-lg mb-8 max-w-md leading-relaxed space-y-2 font-medium">
+            <div className="text-gray-400 text-lg mb-8 max-w-md leading-relaxed space-y-2 font-medium mx-auto md:mx-0">
               <p className="block text-xl text-white">歡迎加入三玉國小滾球隊</p>
               <p className="block text-gray-400">我們培養冠軍，磨練心性，追求卓越！</p>
             </div>
             
-            <div className="flex flex-col md:flex-row gap-6 w-full mb-8">
+            <div className="flex flex-col md:flex-row gap-6 w-full mb-8 text-left">
               {/* Practice Time Block */}
               <div className="bg-sanyu-dark-50 border-l-4 border-sanyu-red p-6 rounded-r-lg backdrop-blur-sm shadow-lg hover:bg-sanyu-dark-70 transition-colors flex flex-col items-start flex-1 min-w-[220px]">
                 <h3 className="text-white font-bold uppercase tracking-wider mb-2 text-sm flex items-center gap-2">
