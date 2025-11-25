@@ -102,7 +102,15 @@ const HistorySection: React.FC<HistorySectionProps> = ({ isAdmin }) => {
   // Chart Rendering Logic
   const height = 400;
   const paddingY = 50;
-  const paddingX = 40; // Added horizontal padding inside chart
+  
+  // Responsive Padding X: Tighter on mobile/tablet to maximize width
+  // Mobile (<600): -50px (Negative to stretch chart beyond edges for wider look)
+  // Tablet (<1024): 30px
+  // Desktop: 60px
+  const paddingX = chartWidth < 600 ? -50 : (chartWidth < 1024 ? 30 : 60);
+  
+  // Interaction width (for hover rects)
+  const hoverWidth = chartWidth < 600 ? 30 : 60;
   
   // Determine which lines to show based on filter
   const showTotal = filter === 'All';
@@ -127,9 +135,8 @@ const HistorySection: React.FC<HistorySectionProps> = ({ isAdmin }) => {
   
   const getX = (index: number) => {
     if (chartData.length <= 1) return chartWidth / 2;
-    // Stretch to full width with padding
-    const effectiveWidth = chartWidth - (paddingX * 2);
-    return paddingX + (index / (chartData.length - 1)) * effectiveWidth;
+    // Restore calculation with padding
+    return paddingX + (index / (chartData.length - 1)) * (chartWidth - paddingX * 2);
   };
   
   const getY = (count: number) => {
@@ -162,12 +169,11 @@ const HistorySection: React.FC<HistorySectionProps> = ({ isAdmin }) => {
     const x1 = getX(firstIdx);
     const x2 = getX(lastIdx);
     
-    // Add some padding to the width for visual appeal
-    const boxX = Math.max(0, x1 - 20); // 20px left padding
-    const boxWidth = (x2 - x1) + 40;   // 40px total padding
-    
-    return { x: boxX, width: boxWidth };
-  }, [chartData, startYear, endYear, chartWidth]); // Added chartWidth dependency
+    // Adjust highlight padding
+    // Use a fixed buffer (20px) instead of paddingX, because paddingX can be negative on mobile
+    const zonePadding = 20;
+    return { x: x1 - zonePadding, width: (x2 - x1) + (zonePadding * 2) };
+  }, [chartData, startYear, endYear, chartWidth, paddingX]);
 
   const getFilteredAchievements = (achievements: Achievement[]) => {
     if (filter === 'All') return achievements;
@@ -311,14 +317,18 @@ const HistorySection: React.FC<HistorySectionProps> = ({ isAdmin }) => {
         </div>
 
         {/* Tech Chart Section */}
-        <div className="mb-16 bg-sanyu-black-50 backdrop-blur-md border border-gray-800 rounded-xl p-6 relative group">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+        {/* Adjusted padding: p-2 for mobile (full width feel), md:p-6 for desktop */}
+        <div className="mb-16 bg-sanyu-black-50 backdrop-blur-md border border-gray-800 rounded-xl p-2 md:p-6 relative group">
+          
+          {/* Legend and Title Stacked */}
+          <div className="flex flex-col gap-4 mb-6">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 px-2">
               <span className="w-1 h-4 bg-sanyu-red"></span>
               歷年獎項統計趨勢
             </h3>
-            {/* Chart Legend */}
-            <div className="flex gap-4 text-xs font-bold flex-wrap">
+            
+            {/* Chart Legend - Moved to new line, added px-2 for alignment */}
+            <div className="flex gap-4 text-xs font-bold flex-wrap px-2">
               {showTotal && <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-sanyu-red border border-white-50"></span> 總獎項</div>}
               {showNational && <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-sanyu-red"></span> 全國賽</div>}
               {showEducation && <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-yellow-500"></span> 教育盃</div>}
@@ -332,8 +342,6 @@ const HistorySection: React.FC<HistorySectionProps> = ({ isAdmin }) => {
                 <svg 
                   viewBox={`0 0 ${chartWidth} ${height}`} 
                   className="w-full h-full overflow-visible"
-                  // Removed preserveAspectRatio="none" to prevent deformation.
-                  // The viewBox logic above handles the width dynamically.
                 >
                   <defs>
                     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -371,7 +379,14 @@ const HistorySection: React.FC<HistorySectionProps> = ({ isAdmin }) => {
                            strokeDasharray="4 4"
                         />
                         {/* Range Labels on top of chart */}
-                        <text x={highlightZone.x + highlightZone.width/2} y={paddingY - 10} textAnchor="middle" fill="#e6004c" fontSize="12" fontWeight="bold">
+                        <text 
+                          x={Math.max(20, Math.min(chartWidth - 20, highlightZone.x + highlightZone.width/2))} 
+                          y={paddingY - 10} 
+                          textAnchor="middle" 
+                          fill="#e6004c" 
+                          fontSize="12" 
+                          fontWeight="bold"
+                        >
                            篩選範圍
                         </text>
                      </g>
@@ -383,15 +398,21 @@ const HistorySection: React.FC<HistorySectionProps> = ({ isAdmin }) => {
                     return (
                       <g key={tick}>
                         <line 
-                          x1={0} 
+                          x1={paddingX} 
                           y1={y} 
-                          x2={chartWidth} 
+                          x2={chartWidth - paddingX} 
                           y2={y} 
                           stroke="#333" 
                           strokeWidth="1" 
                           strokeDasharray="4 4" 
                         />
-                        <text x={10} y={y - 5} textAnchor="start" fill="#555" fontSize="12">
+                        <text 
+                          x={paddingX - 10} 
+                          y={y - 5} 
+                          textAnchor="end"
+                          fill="#555" 
+                          fontSize="12"
+                        >
                           {Math.round(tick * maxCount)}
                         </text>
                       </g>
@@ -488,11 +509,11 @@ const HistorySection: React.FC<HistorySectionProps> = ({ isAdmin }) => {
 
                     return (
                       <g key={d.year} className="point-group cursor-pointer">
-                         {/* Column Hover Highlight */}
+                         {/* Column Hover Highlight - Width adjusted for small screens */}
                          <rect 
-                            x={x - 20} 
+                            x={x - (hoverWidth/2)} 
                             y={paddingY} 
-                            width={40} 
+                            width={hoverWidth} 
                             height={height - paddingY * 2} 
                             fill="#e6004c" 
                             className="column-hover-rect" 
